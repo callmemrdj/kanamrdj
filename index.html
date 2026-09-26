@@ -1,0 +1,1210 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kana Stroke Animation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #faf5ee;
+        --bg-alt: #f0e8db;
+        --card: #ffffff;
+        --text: #2c2c2c;
+        --text-muted: #7a7a7a;
+        --accent: #c0392b;
+        --accent-hover: #a93226;
+        --accent-light: #fef0ed;
+        --border: #e5ddd3;
+        --radius: 10px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          'Zen Kaku Gothic New',
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* === Header === */
+      .header {
+        background: linear-gradient(135deg, #8b1a1a 0%, #c0392b 50%, #d4453a 100%);
+        padding: 22px 16px 18px;
+        text-align: center;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+      .header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+        border-radius: 50%;
+      }
+      .header::after {
+        content: '';
+        position: absolute;
+        bottom: -40%;
+        left: -10%;
+        width: 160px;
+        height: 160px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+        border-radius: 50%;
+      }
+      .header h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        position: relative;
+        z-index: 1;
+      }
+      .header p {
+        font-size: 0.82rem;
+        opacity: 0.8;
+        margin-top: 5px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* === Animation Area === */
+      .animation-area {
+        background: var(--card);
+        margin: 14px 12px;
+        border-radius: var(--radius);
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+        padding: 16px 16px 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid var(--border);
+      }
+      .animation-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .current-char-display {
+        font-family: 'Klee One', serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--accent);
+        min-width: 24px;
+        text-align: center;
+      }
+      .kanji-canvas {
+        width: 100%;
+        max-width: 300px;
+        aspect-ratio: 1 / 1;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        background-color: #fffdf9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.3s;
+      }
+      .kanji-canvas.has-content {
+        border-color: #ddd5c8;
+      }
+      .kanji-canvas svg {
+        width: 100%;
+        height: 100%;
+      }
+      .placeholder-text {
+        color: #c8c0b6;
+        font-size: 0.9rem;
+        text-align: center;
+        user-select: none;
+        line-height: 1.5;
+      }
+      .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        width: 100%;
+        justify-content: center;
+      }
+      .btn {
+        font-family: inherit;
+        font-size: 0.88rem;
+        font-weight: 500;
+        padding: 10px 28px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-accent {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-accent:hover {
+        background: var(--accent-hover);
+      }
+      .btn-accent:active {
+        transform: scale(0.96);
+      }
+      .btn-accent:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* === Youon pair display === */
+      .youon-pair {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
+        height: 100%;
+      }
+      .youon-main,
+      .youon-small-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .youon-main {
+        width: 58%;
+        height: 100%;
+      }
+      .youon-small-wrapper {
+        width: 35%;
+        height: 65%;
+      }
+      .youon-main svg,
+      .youon-small-wrapper svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* === Tab Bar === */
+      .tab-bar {
+        display: flex;
+        margin: 0 12px;
+        background: var(--bg-alt);
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .tab-btn {
+        flex: 1;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 500;
+        padding: 13px 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.25s;
+      }
+      .tab-btn.active {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+      .tab-btn:not(.active):hover {
+        background: rgba(192, 57, 43, 0.07);
+        color: var(--accent);
+      }
+      .tab-btn:active {
+        transform: scale(0.97);
+      }
+
+      /* === Grid Container === */
+      .grid-container {
+        padding: 14px 12px 40px;
+      }
+      .grid-panel {
+        display: none;
+      }
+      .grid-panel.active {
+        display: block;
+        animation: fadePanel 0.3s ease;
+      }
+      @keyframes fadePanel {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* === Section Separator === */
+      .section-separator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 22px 0 14px;
+        color: var(--accent);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .section-separator::before,
+      .section-separator::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* === Row Section === */
+      .row-section {
+        margin-bottom: 16px;
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 12px 10px 10px;
+        border: 1px solid var(--border);
+      }
+      .row-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 8px;
+        padding-left: 2px;
+        letter-spacing: 0.04em;
+      }
+      .sub-label {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        margin: 10px 0 6px 2px;
+        padding-bottom: 4px;
+        border-bottom: 1px dashed #e5ddd3;
+      }
+
+      /* === Char Grid (5 col — basic kana) === */
+      .char-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 7px;
+      }
+      /* === Youon Grid (3 col — youon combinations) === */
+      .youon-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+      }
+
+      /* === Char Cell === */
+      .char-cell {
+        aspect-ratio: 1 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Klee One', serif;
+        font-size: 1.4rem;
+        background: #fffdf9;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .char-cell:hover {
+        background: var(--accent-light);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(192, 57, 43, 0.13);
+      }
+      .char-cell:active {
+        transform: scale(0.9);
+        box-shadow: none;
+      }
+      .char-cell.selected {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 3px 10px rgba(192, 57, 43, 0.25);
+        transform: translateY(-1px);
+      }
+      .char-cell.dakuten {
+        background: #fdf6f2;
+      }
+      .char-cell.dakuten.selected {
+        background: var(--accent);
+        color: #fff;
+      }
+      .char-cell.handakuten {
+        background: #f2f5fd;
+      }
+      .char-cell.handakuten.selected {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      /* Youon cell: slightly smaller font for 2-char text */
+      .char-cell.youon-cell {
+        font-size: 1.05rem;
+        letter-spacing: -0.02em;
+      }
+      .romaji-display {
+        font-size: 0.88rem;
+        color: var(--text-muted);
+        font-style: italic;
+        font-family: 'Zen Kaku Gothic New', sans-serif;
+        margin-left: 8px;
+        letter-spacing: 0.02em;
+        min-width: 20px;
+      }
+
+      /* === Toast === */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: #333;
+        color: #fff;
+        padding: 12px 22px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        z-index: 2000;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+        white-space: nowrap;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* === Spinner === */
+      .spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid #e5ddd3;
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* === Responsive === */
+      @media (max-width: 380px) {
+        .header h1 {
+          font-size: 1.15rem;
+        }
+        .header p {
+          font-size: 0.76rem;
+        }
+        .animation-area {
+          margin: 10px 8px;
+          padding: 12px 10px 14px;
+        }
+        .kanji-canvas {
+          max-width: 240px;
+        }
+        .grid-container {
+          padding: 10px 8px 32px;
+        }
+        .char-grid,
+        .youon-grid {
+          gap: 5px;
+        }
+        .char-cell {
+          font-size: 1.2rem;
+          border-radius: 6px;
+        }
+        .char-cell.youon-cell {
+          font-size: 0.92rem;
+        }
+        .row-section {
+          padding: 10px 8px 8px;
+        }
+        .btn {
+          padding: 9px 20px;
+          font-size: 0.82rem;
+        }
+      }
+      @media (min-width: 500px) {
+        .animation-area {
+          margin: 16px;
+          padding: 20px;
+        }
+        .kanji-canvas {
+          max-width: 340px;
+        }
+        .char-grid,
+        .youon-grid {
+          gap: 8px;
+        }
+        .char-cell {
+          font-size: 1.5rem;
+        }
+        .char-cell.youon-cell {
+          font-size: 1.1rem;
+        }
+      }
+      @media (min-width: 768px) {
+        .animation-area {
+          max-width: 520px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .kanji-canvas {
+          max-width: 380px;
+        }
+        .grid-container {
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .tab-bar {
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .char-cell {
+          font-size: 1.6rem;
+        }
+        .char-cell.youon-cell {
+          font-size: 1.15rem;
+        }
+        .char-grid,
+        .youon-grid {
+          gap: 10px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .char-cell,
+        .grid-panel,
+        .toast,
+        .btn {
+          transition: none;
+          animation: none;
+        }
+        .spinner {
+          animation-duration: 2s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <h1>Penulisan Huruf Jepang</h1>
+      <p>Penulisan HIRAGANA dan KATAKANA bersama Mr.DJ</p>
+    </header>
+
+    <section class="animation-area" id="animation-area">
+      <div class="animation-label">
+        Huruf terpilih: <span class="current-char-display" id="current-char">-</span>
+        <span class="romaji-display" id="romaji-display"></span>
+      </div>
+      <div id="kanji-svg-container" class="kanji-canvas">
+        <span class="placeholder-text">Klik huruf di bawah<br />untuk melihat animasi</span>
+      </div>
+      <div class="btn-row">
+        <button id="animate-button" class="btn btn-accent" disabled>&#9654; Ulangi Animasi</button>
+      </div>
+    </section>
+
+    <nav class="tab-bar" id="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="hiragana" role="tab" aria-selected="true">HIRAGANA</button>
+      <button class="tab-btn" data-tab="katakana" role="tab" aria-selected="false">KATAKANA</button>
+    </nav>
+
+    <main class="grid-container" id="grid-container">
+      <div class="grid-panel active" id="panel-hiragana" role="tabpanel"></div>
+      <div class="grid-panel" id="panel-katakana" role="tabpanel"></div>
+    </main>
+
+    <div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+    <script>
+      'use strict';
+
+      /* ============================
+       Data Kana
+       ============================ */
+
+      const hiraganaRows = [
+        { label: 'あ行', basic: 'あいうえお' },
+        { label: 'か行', basic: 'かきくけこ', dakuten: 'がぎぐげご' },
+        { label: 'さ行', basic: 'さしすせそ', dakuten: 'ざじずぜぞ' },
+        { label: 'た行', basic: 'たちつてと', dakuten: 'だぢづでど' },
+        { label: 'な行', basic: 'なにぬねの' },
+        { label: 'は行', basic: 'はひふへほ', dakuten: 'ばびぶべぼ', handakuten: 'ぱぴぷぺぽ' },
+        { label: 'ま行', basic: 'まみむめも' },
+        { label: 'や行', basic: 'やゆよ' },
+        { label: 'ら行', basic: 'らりるれろ' },
+        { label: 'わ行', basic: 'わをん' },
+        { label: '小文字', basic: 'ゃゅょっ' },
+        /* --- Youon --- */
+        { label: 'き行', youon: true, basic: ['きゃ', 'きゅ', 'きょ'], dakuten: ['ぎゃ', 'ぎゅ', 'ぎょ'] },
+        { label: 'し行', youon: true, basic: ['しゃ', 'しゅ', 'しょ'], dakuten: ['じゃ', 'じゅ', 'じょ'] },
+        { label: 'ち行', youon: true, basic: ['ちゃ', 'ちゅ', 'ちょ'] },
+        { label: 'に行', youon: true, basic: ['にゃ', 'にゅ', 'にょ'] },
+        { label: 'ひ行', youon: true, basic: ['ひゃ', 'ひゅ', 'ひょ'], dakuten: ['びゃ', 'びゅ', 'びょ'], handakuten: ['ぴゃ', 'ぴゅ', 'ぴょ'] },
+        { label: 'み行', youon: true, basic: ['みゃ', 'みゅ', 'みょ'] },
+        { label: 'り行', youon: true, basic: ['りゃ', 'りゅ', 'りょ'] },
+      ];
+
+      const katakanaRows = [
+        { label: 'ア行', basic: 'アイウエオ' },
+        { label: 'カ行', basic: 'カキクケコ', dakuten: 'ガギグゲゴ' },
+        { label: 'サ行', basic: 'サシスセソ', dakuten: 'ザジズゼゾ' },
+        { label: 'タ行', basic: 'タチツテト', dakuten: 'ダヂヅデド' },
+        { label: 'ナ行', basic: 'ナニヌネノ' },
+        { label: 'ハ行', basic: 'ハヒフヘホ', dakuten: 'バビブベボ', handakuten: 'パピプペポ' },
+        { label: 'マ行', basic: 'マミムメモ' },
+        { label: 'ヤ行', basic: 'ヤユヨ' },
+        { label: 'ラ行', basic: 'ラリルレロ' },
+        { label: 'ワ行', basic: 'ワヲン' },
+        { label: '小文字', basic: 'ャュョッヴ' },
+        /* --- Youon --- */
+        { label: 'キ行', youon: true, basic: ['キャ', 'キュ', 'キョ'], dakuten: ['ギャ', 'ギュ', 'ギョ'] },
+        { label: 'シ行', youon: true, basic: ['シャ', 'シュ', 'ショ'], dakuten: ['ジャ', 'ジュ', 'ジョ'] },
+        { label: 'チ行', youon: true, basic: ['チャ', 'チュ', 'チョ'] },
+        { label: 'ニ行', youon: true, basic: ['ニャ', 'ニュ', 'ニョ'] },
+        { label: 'ヒ行', youon: true, basic: ['ヒャ', 'ヒュ', 'ヒョ'], dakuten: ['ビャ', 'ビュ', 'ビョ'], handakuten: ['ピャ', 'ピュ', 'ピョ'] },
+        { label: 'ミ行', youon: true, basic: ['ミャ', 'ミュ', 'ミョ'] },
+        { label: 'リ行', youon: true, basic: ['リャ', 'リュ', 'リョ'] },
+      ];
+
+      /* ============================
+       Render Grid
+       ============================ */
+      function renderGrid(panelEl, rows) {
+        panelEl.innerHTML = '';
+        let youonSeparatorAdded = false;
+
+        rows.forEach((row) => {
+          /* Tambahkan separator sebelum baris youon pertama */
+          if (row.youon && !youonSeparatorAdded) {
+            youonSeparatorAdded = true;
+            const sep = document.createElement('div');
+            sep.className = 'section-separator';
+            sep.innerHTML = '<span>拗音 Youon</span>';
+            panelEl.appendChild(sep);
+          }
+
+          const section = document.createElement('div');
+          section.className = 'row-section';
+
+          const label = document.createElement('div');
+          label.className = 'row-label';
+          label.textContent = row.label;
+          section.appendChild(label);
+
+          if (row.youon) {
+            /* --- Grid youon (3 kolom, data berupa array string 2-kar) --- */
+            if (row.basic && row.basic.length) {
+              section.appendChild(createYouonGrid(row.basic, ''));
+            }
+            if (row.dakuten && row.dakuten.length) {
+              addSubLabel(section, '濁音 dakuten');
+              section.appendChild(createYouonGrid(row.dakuten, 'dakuten'));
+            }
+            if (row.handakuten && row.handakuten.length) {
+              addSubLabel(section, '半濁音 handakuten');
+              section.appendChild(createYouonGrid(row.handakuten, 'handakuten'));
+            }
+          } else {
+            /* --- Grid kana biasa (5 kolom, data berupa string) --- */
+            if (row.basic) {
+              section.appendChild(createCharGrid(row.basic, ''));
+            }
+            if (row.dakuten) {
+              addSubLabel(section, '濁音 dakuten');
+              section.appendChild(createCharGrid(row.dakuten, 'dakuten'));
+            }
+            if (row.handakuten) {
+              addSubLabel(section, '半濁音 handakuten');
+              section.appendChild(createCharGrid(row.handakuten, 'handakuten'));
+            }
+          }
+
+          panelEl.appendChild(section);
+        });
+      }
+
+      function addSubLabel(parent, text) {
+        const sub = document.createElement('div');
+        sub.className = 'sub-label';
+        sub.textContent = text;
+        parent.appendChild(sub);
+      }
+
+      /* Grid kana biasa — 1 karakter per sel */
+      function createCharGrid(chars, type) {
+        const grid = document.createElement('div');
+        grid.className = 'char-grid';
+        for (const char of chars) {
+          const cell = makeCell(char, type, false);
+          grid.appendChild(cell);
+        }
+        return grid;
+      }
+
+      /* Grid youon — 2 karakter per sel */
+      function createYouonGrid(arr, type) {
+        const grid = document.createElement('div');
+        grid.className = 'youon-grid';
+        arr.forEach((combined) => {
+          const cell = makeCell(combined, type, true);
+          grid.appendChild(cell);
+        });
+        return grid;
+      }
+
+      /* Pabrik sel */
+      function makeCell(text, type, isYouon) {
+        const cell = document.createElement('div');
+        let cls = 'char-cell';
+        if (isYouon) cls += ' youon-cell';
+        if (type) cls += ' ' + type;
+        cell.className = cls;
+        cell.textContent = text;
+        cell.dataset.char = text;
+        cell.dataset.youon = isYouon ? '1' : '0';
+        cell.setAttribute('role', 'button');
+        cell.setAttribute('tabindex', '0');
+        cell.setAttribute('aria-label', 'Animasi huruf ' + text);
+
+        cell.addEventListener('click', () => onCharClick(text, cell, isYouon));
+        cell.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onCharClick(text, cell, isYouon);
+          }
+        });
+        return cell;
+      }
+
+      /* ============================
+       Tab Switching
+       ============================ */
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach((b) => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
+          btn.classList.add('active');
+          btn.setAttribute('aria-selected', 'true');
+          document.querySelectorAll('.grid-panel').forEach((p) => p.classList.remove('active'));
+          document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+        });
+      });
+
+      /* ============================
+       Klik Karakter
+       ============================ */
+      let selectedCell = null;
+      let currentAnimationId = 0;
+      let lastIsYouon = false;
+
+      const romajiMap = {
+        /* --- Hiragana dasar --- */
+        あ: 'a',
+        い: 'i',
+        う: 'u',
+        え: 'e',
+        お: 'o',
+        か: 'ka',
+        き: 'ki',
+        く: 'ku',
+        け: 'ke',
+        こ: 'ko',
+        さ: 'sa',
+        し: 'shi',
+        す: 'su',
+        せ: 'se',
+        そ: 'so',
+        た: 'ta',
+        ち: 'chi',
+        つ: 'tsu',
+        て: 'te',
+        と: 'to',
+        な: 'na',
+        に: 'ni',
+        ぬ: 'nu',
+        ね: 'ne',
+        の: 'no',
+        は: 'ha',
+        ひ: 'hi',
+        ふ: 'fu',
+        へ: 'he',
+        ほ: 'ho',
+        ま: 'ma',
+        み: 'mi',
+        む: 'mu',
+        め: 'me',
+        も: 'mo',
+        や: 'ya',
+        ゆ: 'yu',
+        よ: 'yo',
+        ら: 'ra',
+        り: 'ri',
+        る: 'ru',
+        れ: 're',
+        ろ: 'ro',
+        わ: 'wa',
+        を: 'wo',
+        ん: 'n',
+        /* --- Hiragana dakuten --- */
+        が: 'ga',
+        ぎ: 'gi',
+        ぐ: 'gu',
+        げ: 'ge',
+        ご: 'go',
+        ざ: 'za',
+        じ: 'ji',
+        ず: 'zu',
+        ぜ: 'ze',
+        ぞ: 'zo',
+        だ: 'da',
+        ぢ: 'ji',
+        づ: 'zu',
+        で: 'de',
+        ど: 'do',
+        /* --- Hiragana handakuten --- */
+        ば: 'ba',
+        び: 'bi',
+        ぶ: 'bu',
+        べ: 'be',
+        ぼ: 'bo',
+        ぱ: 'pa',
+        ぴ: 'pi',
+        ぷ: 'pu',
+        ぺ: 'pe',
+        ぽ: 'po',
+        /* --- Hiragana kecil --- */
+        ゃ: 'ya',
+        ゅ: 'yu',
+        ょ: 'yo',
+        っ: 'tsu',
+        /* --- Hiragana youon --- */
+        きゃ: 'kya',
+        きゅ: 'kyu',
+        きょ: 'kyo',
+        ぎゃ: 'gya',
+        ぎゅ: 'gyu',
+        ぎょ: 'gyo',
+        しゃ: 'sha',
+        しゅ: 'shu',
+        しょ: 'sho',
+        じゃ: 'ja',
+        じゅ: 'ju',
+        じょ: 'jo',
+        ちゃ: 'cha',
+        ちゅ: 'chu',
+        ちょ: 'cho',
+        にゃ: 'nya',
+        にゅ: 'nyu',
+        にょ: 'nyo',
+        ひゃ: 'hya',
+        ひゅ: 'hyu',
+        ひょ: 'hyo',
+        びゃ: 'bya',
+        びゅ: 'byu',
+        びょ: 'byo',
+        ぴゃ: 'pya',
+        ぴゅ: 'pyu',
+        ぴょ: 'pyo',
+        みゃ: 'mya',
+        みゅ: 'myu',
+        みょ: 'myo',
+        りゃ: 'rya',
+        りゅ: 'ryu',
+        りょ: 'ryo',
+        /* --- Katakana dasar --- */
+        ア: 'a',
+        イ: 'i',
+        ウ: 'u',
+        エ: 'e',
+        オ: 'o',
+        カ: 'ka',
+        キ: 'ki',
+        ク: 'ku',
+        ケ: 'ke',
+        コ: 'ko',
+        サ: 'sa',
+        シ: 'shi',
+        ス: 'su',
+        セ: 'se',
+        ソ: 'so',
+        タ: 'ta',
+        チ: 'chi',
+        ツ: 'tsu',
+        テ: 'te',
+        ト: 'to',
+        ナ: 'na',
+        ニ: 'ni',
+        ヌ: 'nu',
+        ネ: 'ne',
+        ノ: 'no',
+        ハ: 'ha',
+        ヒ: 'hi',
+        フ: 'fu',
+        ヘ: 'he',
+        ホ: 'ho',
+        マ: 'ma',
+        ミ: 'mi',
+        ム: 'mu',
+        メ: 'me',
+        モ: 'mo',
+        ヤ: 'ya',
+        ユ: 'yu',
+        ヨ: 'yo',
+        ラ: 'ra',
+        リ: 'ri',
+        ル: 'ru',
+        レ: 're',
+        ロ: 'ro',
+        ワ: 'wa',
+        ヲ: 'wo',
+        ン: 'n',
+        /* --- Katakana dakuten --- */
+        ガ: 'ga',
+        ギ: 'gi',
+        グ: 'gu',
+        ゲ: 'ge',
+        ゴ: 'go',
+        ザ: 'za',
+        ジ: 'ji',
+        ズ: 'zu',
+        ゼ: 'ze',
+        ゾ: 'zo',
+        ダ: 'da',
+        ヂ: 'ji',
+        ヅ: 'zu',
+        デ: 'de',
+        ド: 'do',
+        /* --- Katakana handakuten --- */
+        バ: 'ba',
+        ビ: 'bi',
+        ブ: 'bu',
+        ベ: 'be',
+        ボ: 'bo',
+        パ: 'pa',
+        ピ: 'pi',
+        プ: 'pu',
+        ペ: 'pe',
+        ポ: 'po',
+        /* --- Katakana kecil --- */
+        ャ: 'ya',
+        ュ: 'yu',
+        ョ: 'yo',
+        ッ: 'tsu',
+        ヴ: 'vu',
+        /* --- Katakana youon --- */
+        キャ: 'kya',
+        キュ: 'kyu',
+        キョ: 'kyo',
+        ギャ: 'gya',
+        ギュ: 'gyu',
+        ギョ: 'gyo',
+        シャ: 'sha',
+        シュ: 'shu',
+        ショ: 'sho',
+        ジャ: 'ja',
+        ジュ: 'ju',
+        ジョ: 'jo',
+        チャ: 'cha',
+        チュ: 'chu',
+        チョ: 'cho',
+        ニャ: 'nya',
+        ニュ: 'nyu',
+        ニョ: 'nyo',
+        ヒャ: 'hya',
+        ヒュ: 'hyu',
+        ヒョ: 'hyo',
+        ビャ: 'bya',
+        ビュ: 'byu',
+        ビョ: 'byo',
+        ピャ: 'pya',
+        ピュ: 'pyu',
+        ピョ: 'pyo',
+        ミャ: 'mya',
+        ミュ: 'myu',
+        ミョ: 'myo',
+        リャ: 'rya',
+        リュ: 'ryu',
+        リョ: 'ryo',
+      };
+
+      function onCharClick(char, cell, isYouon) {
+        if (selectedCell) selectedCell.classList.remove('selected');
+        cell.classList.add('selected');
+        selectedCell = cell;
+
+        document.getElementById('current-char').textContent = char;
+
+        /* >>> BARIS BARU: tampilkan romaji <<< */
+        const r = romajiMap[char];
+        document.getElementById('romaji-display').textContent = r ? '(' + r + ')' : '';
+
+        currentAnimationId++;
+        lastIsYouon = isYouon;
+
+        if (isYouon) {
+          loadYouonSVG(char);
+        } else {
+          loadSingleSVG(char);
+        }
+
+        document.getElementById('animation-area').scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }
+
+      /* ============================
+       Muat SVG — Karakter Tunggal
+       ============================ */
+      function loadSingleSVG(char) {
+        const hexCode = char.codePointAt(0).toString(16).padStart(5, '0');
+        const url = 'https://raw.githubusercontent.com/KanjiVG/kanjivg/master/kanji/' + hexCode + '.svg';
+
+        const container = document.getElementById('kanji-svg-container');
+        container.classList.remove('has-content');
+        container.innerHTML = '<div class="spinner"></div>';
+        document.getElementById('animate-button').disabled = true;
+
+        fetch(url)
+          .then((r) => {
+            if (!r.ok) throw new Error();
+            return r.text();
+          })
+          .then((svgText) => {
+            container.innerHTML = cleanSvg(svgText);
+            container.classList.add('has-content');
+            const svg = container.querySelector('svg');
+            if (svg) {
+              svg.id = 'kanji-svg';
+              autoAnimateSingle(svg);
+            }
+            document.getElementById('animate-button').disabled = false;
+          })
+          .catch(() => {
+            container.innerHTML = '<span class="placeholder-text" style="color:var(--accent)">SVG tidak tersedia</span>';
+            showToast('Huruf ini belum ada di database KanjiVG');
+            document.getElementById('animate-button').disabled = true;
+          });
+      }
+
+      /* ============================
+       Muat SVG — Youon (2 karakter)
+       ============================ */
+      function loadYouonSVG(combined) {
+        const mainChar = combined[0];
+        const smallChar = combined[1];
+
+        const mainHex = mainChar.codePointAt(0).toString(16).padStart(5, '0');
+        const smallHex = smallChar.codePointAt(0).toString(16).padStart(5, '0');
+
+        const mainUrl = 'https://raw.githubusercontent.com/KanjiVG/kanjivg/master/kanji/' + mainHex + '.svg';
+        const smallUrl = 'https://raw.githubusercontent.com/KanjiVG/kanjivg/master/kanji/' + smallHex + '.svg';
+
+        const container = document.getElementById('kanji-svg-container');
+        container.classList.remove('has-content');
+        container.innerHTML = '<div class="spinner"></div>';
+        document.getElementById('animate-button').disabled = true;
+
+        const snapshotId = currentAnimationId;
+
+        Promise.all([
+          fetch(mainUrl).then((r) => {
+            if (!r.ok) throw new Error();
+            return r.text();
+          }),
+          fetch(smallUrl).then((r) => {
+            if (!r.ok) throw new Error();
+            return r.text();
+          }),
+        ])
+          .then(([mainText, smallText]) => {
+            if (snapshotId !== currentAnimationId) return;
+
+            container.innerHTML = '<div class="youon-pair">' + '<div class="youon-main">' + cleanSvg(mainText) + '</div>' + '<div class="youon-small-wrapper">' + cleanSvg(smallText) + '</div>' + '</div>';
+            container.classList.add('has-content');
+
+            const mainSvg = container.querySelector('.youon-main svg');
+            const smallSvg = container.querySelector('.youon-small-wrapper svg');
+            if (mainSvg) mainSvg.id = 'kanji-svg-main';
+            if (smallSvg) smallSvg.id = 'kanji-svg-small';
+
+            if (mainSvg && smallSvg) autoAnimateYouon(mainSvg, smallSvg);
+            document.getElementById('animate-button').disabled = false;
+          })
+          .catch(() => {
+            container.innerHTML = '<span class="placeholder-text" style="color:var(--accent)">SVG tidak tersedia</span>';
+            showToast('Huruf ini belum ada di database KanjiVG');
+            document.getElementById('animate-button').disabled = true;
+          });
+      }
+
+      function cleanSvg(raw) {
+        return raw
+          .replace(/<\?xml[^>]*\?>|<!DOCTYPE[^>]*>/g, '')
+          .replace(/\]\>/g, '')
+          .trim();
+      }
+
+      /* ============================
+       Kelas Animasi SVG
+       ============================ */
+      class KVGAnimator {
+        constructor(duration, animId) {
+          this.duration = duration;
+          this.animId = animId;
+          this.onComplete = null;
+        }
+
+        play(svgElement, onComplete) {
+          if (!svgElement || svgElement.tagName !== 'svg') {
+            if (onComplete) onComplete();
+            return;
+          }
+          if (svgElement.querySelectorAll('path').length <= 0) {
+            if (onComplete) onComplete();
+            return;
+          }
+
+          this.onComplete = onComplete || null;
+          this.paths = svgElement.querySelectorAll('path');
+          this.numbers = svgElement.querySelectorAll('text');
+          this.pathCount = this.paths.length;
+
+          this.hideAll();
+          this.currentIndex = 0;
+          this.animatePath(this.paths[0], this.numbers[0]);
+        }
+
+        hideAll() {
+          for (let i = 0; i < this.pathCount; i++) {
+            this.paths[i].style.display = 'none';
+            if (this.numbers[i]) this.numbers[i].style.display = 'none';
+          }
+        }
+
+        animatePath(path, number) {
+          if (this.animId !== currentAnimationId) return;
+
+          this.length = path.getTotalLength();
+          path.style.display = 'block';
+          if (number) number.style.display = 'block';
+
+          path.style.transition = 'none';
+          path.style.WebkitTransition = 'none';
+          path.style.strokeDasharray = this.length + ' ' + this.length;
+          path.style.strokeDashoffset = this.length;
+
+          path.getBoundingClientRect();
+
+          this.interval = this.duration / this.length;
+          this.doAnimation(path);
+        }
+
+        doAnimation(path) {
+          if (this.animId !== currentAnimationId) return;
+
+          const tid = setTimeout(() => {
+            this.doAnimation(path);
+          }, this.interval);
+
+          path.style.strokeDashoffset = this.length;
+          this.length--;
+
+          if (this.length < 0) {
+            clearTimeout(tid);
+            this.currentIndex++;
+            if (this.currentIndex < this.pathCount) {
+              this.animatePath(this.paths[this.currentIndex], this.numbers[this.currentIndex]);
+            } else if (this.onComplete) {
+              this.onComplete();
+            }
+          }
+        }
+      }
+
+      /* ============================
+       Fungsi Animasi
+       ============================ */
+      const ANIM_DURATION = 800;
+
+      function autoAnimateSingle(svgEl) {
+        const id = ++currentAnimationId;
+        new KVGAnimator(ANIM_DURATION, id).play(svgEl);
+      }
+
+      function autoAnimateYouon(mainSvg, smallSvg) {
+        const id = ++currentAnimationId;
+        new KVGAnimator(ANIM_DURATION, id).play(mainSvg, () => {
+          if (id !== currentAnimationId) return;
+          new KVGAnimator(ANIM_DURATION, id).play(smallSvg);
+        });
+      }
+
+      /* Tombol Ulangi */
+      document.getElementById('animate-button').addEventListener('click', () => {
+        if (lastIsYouon) {
+          const mainSvg = document.querySelector('#kanji-svg-main');
+          const smallSvg = document.querySelector('#kanji-svg-small');
+          if (mainSvg && smallSvg) autoAnimateYouon(mainSvg, smallSvg);
+        } else {
+          const svg = document.querySelector('#kanji-svg');
+          if (svg) autoAnimateSingle(svg);
+        }
+      });
+
+      /* ============================
+       Toast
+       ============================ */
+      let toastTimer = null;
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+      }
+
+      /* ============================
+       Inisialisasi
+       ============================ */
+      renderGrid(document.getElementById('panel-hiragana'), hiraganaRows);
+      renderGrid(document.getElementById('panel-katakana'), katakanaRows);
+    </script>
+  </body>
+</html>
